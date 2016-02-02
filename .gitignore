@@ -1,0 +1,15 @@
+*.user
+*.suo
+*.log
+*.swp
+*.exe
+*.bak
+*.log
+*.orig
+
+/packages/
+/artifacts/
+.vs/
+
+[Bb]in/
+[Oo]bj/
