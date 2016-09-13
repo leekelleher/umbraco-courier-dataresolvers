@@ -7,7 +7,7 @@
 *.log
 *.orig
 
-/packages/
+src/packages/
 /artifacts/
 .vs/
 

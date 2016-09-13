@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Umbraco.CourierProviders.Core", "src\Umbraco.CourierProviders.Core\Umbraco.CourierProviders.Core.csproj", "{28728733-BFB3-45E2-9C8E-59D0C461B4ED}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Umbraco.CourierProviders.Core", "Umbraco.CourierProviders.Core\Umbraco.CourierProviders.Core.csproj", "{28728733-BFB3-45E2-9C8E-59D0C461B4ED}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{318CFA96-81B9-45B8-9C63-876CBC6D93B2}"
 	ProjectSection(SolutionItems) = preProject
