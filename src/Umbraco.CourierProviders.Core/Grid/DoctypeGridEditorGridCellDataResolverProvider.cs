@@ -15,7 +15,7 @@
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
 
-    public class DoctypeGridEditorGridCellDataResolverProvider : GridCellDataResolverProvider
+    public class DoctypeGridEditorGridCellDataResolverProvider : GridCellResolverProvider
     {
         private enum Direction
         {
@@ -23,35 +23,27 @@
             Packaging
         }
 
-        public override bool ShouldRun(string view, dynamic cell)
+        public override bool ShouldRun(string view, GridValueControlModel cell)
         {
-            try
-            {
-                return cell?.editor?.alias?.ToString() == "docType";
-            }
-            catch
-            {
-                // ignored
-            }
-
-            return false;
+            return cell.Value["dtgeContentTypeAlias"] != null && cell.Value["value"] != null;
         }
 
-        public override void PackagingCell(Item item, ContentProperty propertyData, dynamic cell)
+        public override void PackagingCell(Item item, ContentProperty propertyData, GridValueControlModel cell)
         {
             ProcessCell(item, propertyData, cell, Direction.Packaging);
         }
 
-        public override void ExtractingCell(Item item, ContentProperty propertyData, dynamic cell)
+        public override void ExtractingCell(Item item, ContentProperty propertyData, GridValueControlModel cell)
         {
             ProcessCell(item, propertyData, cell, Direction.Extracting);
         }
 
-        private void ProcessCell(Item item, ContentProperty propertyData, dynamic cell, Direction direction)
+        private void ProcessCell(Item item, ContentProperty propertyData, GridValueControlModel cell, Direction direction)
         {
-            string docTypeId = cell?.value?.docType?.ToString();
-            string cellValue = cell?.value?.value?.ToString();
-            if (cellValue == null || docTypeId == null)
+            string docTypeAlias = cell.Value["dtgeContentTypeAlias"].ToString();
+            string cellValue = cell.Value["value"].ToString();
+
+            if (cellValue == null || docTypeAlias == null)
                 return;
 
             var data = JsonConvert.DeserializeObject(cellValue);
@@ -60,19 +52,11 @@
 
             var propValues = ((JObject)data).ToObject<Dictionary<string, object>>();
             var docType = ExecutionContext.DatabasePersistence.RetrieveItem<DocumentType>(
-                new ItemIdentifier(docTypeId, ItemProviderIds.documentTypeItemProviderGuid));
+                new ItemIdentifier(docTypeAlias, ItemProviderIds.documentTypeItemProviderGuid));
 
             if (direction == Direction.Packaging)
             {
-                item.Dependencies.Add(docTypeId, ItemProviderIds.documentTypeItemProviderGuid);
-
-                //package doctype from guid to alias
-                cell.value.docType = new JValue(docType.Alias);
-            }
-            else if (direction == Direction.Extracting)
-            {
-                //extract doctype from alias to guid
-                cell.value.docType = new JValue(docType.UniqueId.ToString());
+                item.Dependencies.Add(docType.UniqueId.ToString(), ItemProviderIds.documentTypeItemProviderGuid);
             }
 
             var propertyItemProvider = ItemProviderCollection.Instance.GetProvider(ItemProviderIds.propertyDataItemProviderGuid, ExecutionContext);
@@ -165,7 +149,7 @@
             }
 
             var serialized = JsonConvert.SerializeObject(propValues);
-            cell.value.value = JsonConvert.DeserializeObject(serialized);
+            cell.Value["value"] = JsonConvert.DeserializeObject<JToken>(serialized);
         }
     }
 }
