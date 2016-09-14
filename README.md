@@ -46,7 +46,9 @@ Have a question?
 ## License
 
 Copyright &copy; 2016 Our Umbraco and [other contributors](https://github.com/leekelleher/umbraco-courier-dataresolvers/graphs/contributors)
+
 Copyright &copy; 2016 DIS/PLAY
+
 Copyright &copy; 2014 Lee Kelleher, Umbrella Inc
 
 Licensed under the [MIT License](LICENSE.md)
