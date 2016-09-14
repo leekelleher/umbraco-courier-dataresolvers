@@ -1,21 +1,17 @@
-﻿namespace DisPlay.Umbraco.CourierProviders.Core.Grid
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Umbraco.Courier.Core;
+using Umbraco.Courier.Core.Logging;
+using Umbraco.Courier.Core.ProviderModel;
+using Umbraco.Courier.DataResolvers.PropertyDataResolvers;
+using Umbraco.Courier.ItemProviders;
+
+namespace Our.Umbraco.Courier.DataResolvers.GridCellDataResolvers
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-
-    using NestedContent;
-
-    using global::Umbraco.Courier.Core;
-    using global::Umbraco.Courier.Core.Logging;
-    using global::Umbraco.Courier.Core.ProviderModel;
-    using global::Umbraco.Courier.DataResolvers.PropertyDataResolvers;
-    using global::Umbraco.Courier.ItemProviders;
-
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Linq;
-
-    public class DoctypeGridEditorGridCellDataResolverProvider : GridCellResolverProvider
+    public class DocTypeGridEditorGridCellResolverProvider : GridCellResolverProvider
     {
         private enum Direction
         {
@@ -30,20 +26,22 @@
 
         public override void PackagingCell(Item item, ContentProperty propertyData, GridValueControlModel cell)
         {
-            ProcessCell(item, propertyData, cell, Direction.Packaging);
+            ReplacePropertyDataIds(item, propertyData, cell, Direction.Packaging);
         }
 
         public override void ExtractingCell(Item item, ContentProperty propertyData, GridValueControlModel cell)
         {
-            ProcessCell(item, propertyData, cell, Direction.Extracting);
+            ReplacePropertyDataIds(item, propertyData, cell, Direction.Extracting);
         }
 
-        private void ProcessCell(Item item, ContentProperty propertyData, GridValueControlModel cell, Direction direction)
+        private void ReplacePropertyDataIds(Item item, ContentProperty propertyData, GridValueControlModel cell, Direction direction)
         {
-            string docTypeAlias = cell.Value["dtgeContentTypeAlias"].ToString();
-            string cellValue = cell.Value["value"].ToString();
+            var docTypeAlias = cell.Value["dtgeContentTypeAlias"].ToString();
+            if (string.IsNullOrWhiteSpace(docTypeAlias))
+                return;
 
-            if (cellValue == null || docTypeAlias == null)
+            var cellValue = cell.Value["value"].ToString();
+            if (string.IsNullOrWhiteSpace(cellValue))
                 return;
 
             var data = JsonConvert.DeserializeObject(cellValue);
@@ -64,7 +62,7 @@
             foreach (var prop in docType.Properties)
             {
                 object value;
-                if (!propValues.TryGetValue(prop.Alias, out value))
+                if (!propValues.TryGetValue(prop.Alias, out value) || value == null)
                     continue;
 
                 var datatype =
@@ -78,15 +76,15 @@
                     ItemId = item.ItemId,
                     Name = string.Format("{0} [{1}: Nested {2} ({3})]", item.Name, EditorAlias, datatype.PropertyEditorAlias, prop.Alias),
                     Data = new List<ContentProperty>
-                            {
-                                new ContentProperty
-                                {
-                                    Alias = prop.Alias,
-                                    DataType = datatype.UniqueID,
-                                    PropertyEditorAlias = datatype.PropertyEditorAlias,
-                                    Value = value.ToString()
-                                }
-                            }
+                    {
+                        new ContentProperty
+                        {
+                            Alias = prop.Alias,
+                            DataType = datatype.UniqueID,
+                            PropertyEditorAlias = datatype.PropertyEditorAlias,
+                            Value = value.ToString()
+                        }
+                    }
                 };
 
                 if (direction == Direction.Packaging)
@@ -98,7 +96,7 @@
                     }
                     catch (Exception ex)
                     {
-                        CourierLogHelper.Error<NestedContentDataResolverProvider>(
+                        CourierLogHelper.Error<DocTypeGridEditorGridCellResolverProvider>(
                             string.Concat("Error packaging data value: ", fakeItem.Name), ex);
                     }
                 }
@@ -111,7 +109,7 @@
                     }
                     catch (Exception ex)
                     {
-                        CourierLogHelper.Error<NestedContentDataResolverProvider>(
+                        CourierLogHelper.Error<DocTypeGridEditorGridCellResolverProvider>(
                             string.Concat("Error extracting data value: ", fakeItem.Name), ex);
                     }
                 }
@@ -126,8 +124,7 @@
                     if (firstDataType != null)
                     {
                         // set the resolved property data value
-                        string serializedValue = firstDataType.Value as string ??
-                                                 JsonConvert.SerializeObject(firstDataType.Value);
+                        string serializedValue = firstDataType.Value as string ?? JsonConvert.SerializeObject(firstDataType.Value);
 
                         object jsonValue;
                         try
@@ -148,8 +145,7 @@
                 }
             }
 
-            var serialized = JsonConvert.SerializeObject(propValues);
-            cell.Value["value"] = JsonConvert.DeserializeObject<JToken>(serialized);
+            cell.Value["value"] = JToken.FromObject(propValues);
         }
     }
 }
