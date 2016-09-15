@@ -124,19 +124,7 @@ namespace Our.Umbraco.Courier.DataResolvers.GridCellDataResolvers
                     if (firstDataType != null)
                     {
                         // set the resolved property data value
-                        string serializedValue = firstDataType.Value as string ?? JsonConvert.SerializeObject(firstDataType.Value);
-
-                        object jsonValue;
-                        try
-                        {
-                            jsonValue = JsonConvert.DeserializeObject(serializedValue);
-                        }
-                        catch
-                        {
-                            jsonValue = serializedValue;
-                        }
-
-                        propValues[prop.Alias] = jsonValue;
+                        propValues[prop.Alias] = firstDataType.Value;
 
                         // (if packaging) add a dependency for the property's data-type
                         if (direction == Direction.Packaging)
