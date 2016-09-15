@@ -21,7 +21,18 @@ namespace Our.Umbraco.Courier.DataResolvers.GridCellDataResolvers
 
         public override bool ShouldRun(string view, GridValueControlModel cell)
         {
-            return cell.Value["dtgeContentTypeAlias"] != null && cell.Value["value"] != null;
+            try
+            {
+                if (cell == null || cell.Value == null)
+                    return false;
+
+                return cell.Value["dtgeContentTypeAlias"] != null && cell.Value["value"] != null;
+            }
+            catch (Exception ex)
+            {
+                CourierLogHelper.Error<DocTypeGridEditorGridCellResolverProvider>("Error reading grid cell value: ", ex);
+                return false;
+            }
         }
 
         public override void PackagingCell(Item item, ContentProperty propertyData, GridValueControlModel cell)
