@@ -61,7 +61,7 @@ namespace Our.Umbraco.Courier.DataResolvers.GridCellDataResolvers
 
             foreach (var prop in docType.Properties)
             {
-                object value;
+                object value = null;
                 if (!propValues.TryGetValue(prop.Alias, out value) || value == null)
                     continue;
 
