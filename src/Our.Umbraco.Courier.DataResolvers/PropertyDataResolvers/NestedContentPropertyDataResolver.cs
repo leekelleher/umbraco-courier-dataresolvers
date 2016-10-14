@@ -94,8 +94,8 @@ namespace Our.Umbraco.Courier.DataResolvers.PropertyDataResolvers
                 foreach (var masterTypeAlias in doctype.MasterDocumentTypes)
                 {
                     var masterType = ExecutionContext.DatabasePersistence.RetrieveItem<DocumentType>(new ItemIdentifier(masterTypeAlias, ItemProviderIds.documentTypeItemProviderGuid));
-                    foreach (var prop in masterType.Properties)
-                        properties.Add(prop);
+                    if (masterType != null)
+                        properties.AddRange(masterType.Properties);
                 }
 
                 foreach (var propertyType in properties)
