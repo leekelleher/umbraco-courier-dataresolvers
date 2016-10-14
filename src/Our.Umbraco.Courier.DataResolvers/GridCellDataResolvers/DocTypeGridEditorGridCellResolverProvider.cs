@@ -70,7 +70,17 @@ namespace Our.Umbraco.Courier.DataResolvers.GridCellDataResolvers
 
             var propertyItemProvider = ItemProviderCollection.Instance.GetProvider(ItemProviderIds.propertyDataItemProviderGuid, ExecutionContext);
 
-            foreach (var prop in docType.Properties)
+            var properties = docType.Properties;
+
+            // check for compositions
+            foreach (var masterTypeAlias in docType.MasterDocumentTypes)
+            {
+                var masterType = ExecutionContext.DatabasePersistence.RetrieveItem<DocumentType>(new ItemIdentifier(masterTypeAlias, ItemProviderIds.documentTypeItemProviderGuid));
+                if (masterType != null)
+                    properties.AddRange(masterType.Properties);
+            }
+
+            foreach (var prop in properties)
             {
                 object value = null;
                 if (!propValues.TryGetValue(prop.Alias, out value) || value == null)
