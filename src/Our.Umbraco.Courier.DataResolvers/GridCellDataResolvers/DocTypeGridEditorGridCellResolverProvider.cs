@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Umbraco.Courier.Core;
@@ -93,7 +94,7 @@ namespace Our.Umbraco.Courier.DataResolvers.GridCellDataResolvers
                             Alias = prop.Alias,
                             DataType = datatype.UniqueID,
                             PropertyEditorAlias = datatype.PropertyEditorAlias,
-                            Value = value.ToString()
+                            Value = value
                         }
                     }
                 };
@@ -144,7 +145,39 @@ namespace Our.Umbraco.Courier.DataResolvers.GridCellDataResolvers
                 }
             }
 
-            cell.Value["value"] = JToken.FromObject(propValues);
+            // build up json as a string first, as directly converting 
+            // propValues to a JToken causes json objects to be converted into a string
+            // (such as nested content inside a doctypegrid)
+            var jsonString = new StringBuilder("{");
+            foreach (var val in propValues)
+            {
+                jsonString.Append("\"");
+                jsonString.Append(val.Key);
+                jsonString.Append("\":");
+
+                // check if it's a json object and not just a string
+                if (val.Value.ToString().Trim().StartsWith("["))
+                {
+                    jsonString.Append(val.Value);
+                }
+                else
+                {
+                    jsonString.Append("\"");
+                    jsonString.Append(val.Value);
+                    jsonString.Append("\"");
+                }
+
+                jsonString.Append(",");
+            }
+            if (jsonString.Length > 1)
+            {
+                jsonString.Remove(jsonString.Length - 1, 1);
+            }
+            jsonString.Append("}");
+
+
+            var tempCellValue = JToken.Parse(jsonString.ToString());
+            cell.Value["value"] = tempCellValue;
         }
     }
 }
