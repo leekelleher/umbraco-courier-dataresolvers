@@ -85,13 +85,14 @@ namespace Our.Umbraco.Courier.DataResolvers.PropertyDataResolvers
                 if (doctypeAlias == null)
                     continue;
 
-                var doctype = ExecutionContext.DatabasePersistence.RetrieveItem<DocumentType>(new ItemIdentifier(doctypeAlias.ToString(), ItemProviderIds.documentTypeItemProviderGuid));
-                if (doctype == null)
+                var docType = ExecutionContext.DatabasePersistence.RetrieveItem<DocumentType>(new ItemIdentifier(doctypeAlias.ToString(), ItemProviderIds.documentTypeItemProviderGuid));
+                if (docType == null)
                     continue;
-                var properties = doctype.Properties;
+
+                var properties = docType.Properties;
 
                 // check for compositions
-                foreach (var masterTypeAlias in doctype.MasterDocumentTypes)
+                foreach (var masterTypeAlias in docType.MasterDocumentTypes)
                 {
                     var masterType = ExecutionContext.DatabasePersistence.RetrieveItem<DocumentType>(new ItemIdentifier(masterTypeAlias, ItemProviderIds.documentTypeItemProviderGuid));
                     if (masterType != null)
