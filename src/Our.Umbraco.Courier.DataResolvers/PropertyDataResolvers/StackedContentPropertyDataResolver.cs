@@ -91,15 +91,25 @@ namespace Our.Umbraco.Courier.DataResolvers.PropertyDataResolvers
         {
             foreach (var icItem in icItems)
             {
-                var doctypeAlias = icItem["icContentTypeAlias"];
-                if (doctypeAlias == null)
+                var docTypeAlias = icItem["icContentTypeAlias"];
+                if (docTypeAlias == null)
                     continue;
 
-                var doctype = ExecutionContext.DatabasePersistence.RetrieveItem<DocumentType>(new ItemIdentifier(doctypeAlias.ToString(), ItemProviderIds.documentTypeItemProviderGuid));
-                if (doctype == null)
+                var docType = ExecutionContext.DatabasePersistence.RetrieveItem<DocumentType>(new ItemIdentifier(docTypeAlias.ToString(), ItemProviderIds.documentTypeItemProviderGuid));
+                if (docType == null)
                     continue;
 
-                foreach (var propertyType in doctype.Properties)
+                var propertyTypes = docType.Properties;
+
+                // check for compositions
+                foreach (var masterDocTypeAlias in docType.MasterDocumentTypes)
+                {
+                    var masterDocType = ExecutionContext.DatabasePersistence.RetrieveItem<DocumentType>(new ItemIdentifier(masterDocTypeAlias, ItemProviderIds.documentTypeItemProviderGuid));
+                    if (masterDocType != null)
+                        propertyTypes.AddRange(masterDocType.Properties);
+                }
+
+                foreach (var propertyType in propertyTypes)
                 {
                     ProcessItemPropertyData(item, propertyType, icItem, propertyItemProvider, direction);
                 }
