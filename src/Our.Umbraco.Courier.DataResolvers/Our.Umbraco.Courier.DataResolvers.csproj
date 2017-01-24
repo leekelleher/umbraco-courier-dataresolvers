@@ -121,6 +121,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GridCellDataResolvers\DocTypeGridEditorGridCellResolverProvider.cs" />
+    <Compile Include="PropertyDataResolvers\FocalPointMediaPicker.cs" />
     <Compile Include="PropertyDataResolvers\StackedContentPropertyDataResolver.cs" />
     <Compile Include="PropertyDataResolvers\MenuBuilderPropertyDataResolver.cs" />
     <Compile Include="PropertyDataResolvers\NestedContentPropertyDataResolver.cs" />
