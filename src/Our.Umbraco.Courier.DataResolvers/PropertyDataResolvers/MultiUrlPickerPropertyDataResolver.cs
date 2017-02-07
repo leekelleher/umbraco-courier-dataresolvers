@@ -41,7 +41,10 @@ namespace Our.Umbraco.Courier.DataResolvers.PropertyDataResolvers
                         ? ItemProviderIds.mediaItemProviderGuid
                         : ItemProviderIds.documentItemProviderGuid;
 
-                    var nodeGuid = ExecutionContext.DatabasePersistence.GetUniqueId((int)link["id"], objectTypeId);
+                    int linkId;
+                    var nodeGuid = int.TryParse(link["id"].ToString(), out linkId)
+                        ? ExecutionContext.DatabasePersistence.GetUniqueId(linkId, objectTypeId)
+                        : Guid.Empty;
 
                     if (Guid.Empty.Equals(nodeGuid))
                         continue;
