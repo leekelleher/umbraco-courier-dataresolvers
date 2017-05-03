@@ -79,97 +79,101 @@ namespace Our.Umbraco.Courier.DataResolvers.PropertyDataResolvers
 
             var ncItems = JsonConvert.DeserializeObject<JArray>(propertyData.Value.ToString());
 
-            foreach (var ncItem in ncItems)
-            {
-                var doctypeAlias = ncItem["ncContentTypeAlias"];
-                if (doctypeAlias == null)
-                    continue;
+			// loop through all the Nested Content items
+            if (ncItems != null && ncItems.Any())
+			{
+				foreach (var ncItem in ncItems)
+				{
+					var doctypeAlias = ncItem["ncContentTypeAlias"];
+					if (doctypeAlias == null)
+						continue;
 
-                var docType = ExecutionContext.DatabasePersistence.RetrieveItem<DocumentType>(new ItemIdentifier(doctypeAlias.ToString(), ItemProviderIds.documentTypeItemProviderGuid));
-                if (docType == null)
-                    continue;
+					var docType = ExecutionContext.DatabasePersistence.RetrieveItem<DocumentType>(new ItemIdentifier(doctypeAlias.ToString(), ItemProviderIds.documentTypeItemProviderGuid));
+					if (docType == null)
+						continue;
 
-                var properties = docType.Properties;
+					var properties = docType.Properties;
 
-                // check for compositions
-                foreach (var masterTypeAlias in docType.MasterDocumentTypes)
-                {
-                    var masterType = ExecutionContext.DatabasePersistence.RetrieveItem<DocumentType>(new ItemIdentifier(masterTypeAlias, ItemProviderIds.documentTypeItemProviderGuid));
-                    if (masterType != null)
-                        properties.AddRange(masterType.Properties);
-                }
+					// check for compositions
+					foreach (var masterTypeAlias in docType.MasterDocumentTypes)
+					{
+						var masterType = ExecutionContext.DatabasePersistence.RetrieveItem<DocumentType>(new ItemIdentifier(masterTypeAlias, ItemProviderIds.documentTypeItemProviderGuid));
+						if (masterType != null)
+							properties.AddRange(masterType.Properties);
+					}
 
-                foreach (var propertyType in properties)
-                {
-                    var value = ncItem[propertyType.Alias];
-                    if (value != null)
-                    {
-                        var datatype = ExecutionContext.DatabasePersistence.RetrieveItem<DataType>(new ItemIdentifier(propertyType.DataTypeDefinitionId.ToString(), ItemProviderIds.dataTypeItemProviderGuid));
+					foreach (var propertyType in properties)
+					{
+						var value = ncItem[propertyType.Alias];
+						if (value != null)
+						{
+							var datatype = ExecutionContext.DatabasePersistence.RetrieveItem<DataType>(new ItemIdentifier(propertyType.DataTypeDefinitionId.ToString(), ItemProviderIds.dataTypeItemProviderGuid));
 
-                        // create a 'fake' item for Courier to process
-                        var fakeItem = new ContentPropertyData
-                        {
-                            ItemId = item.ItemId,
-                            Name = string.Format("{0} [{1}: Nested {2} ({3})]", item.Name, propertyData.PropertyEditorAlias, datatype.PropertyEditorAlias, propertyType.Alias),
-                            Data = new List<ContentProperty>
-                            {
-                                new ContentProperty
-                                {
-                                    Alias = propertyType.Alias,
-                                    DataType = datatype.UniqueID,
-                                    PropertyEditorAlias = datatype.PropertyEditorAlias,
-                                    Value = value.ToString()
-                                }
-                            }
-                        };
+							// create a 'fake' item for Courier to process
+							var fakeItem = new ContentPropertyData
+							{
+								ItemId = item.ItemId,
+								Name = string.Format("{0} [{1}: Nested {2} ({3})]", item.Name, propertyData.PropertyEditorAlias, datatype.PropertyEditorAlias, propertyType.Alias),
+								Data = new List<ContentProperty>
+								{
+									new ContentProperty
+									{
+										Alias = propertyType.Alias,
+										DataType = datatype.UniqueID,
+										PropertyEditorAlias = datatype.PropertyEditorAlias,
+										Value = value.ToString()
+									}
+								}
+							};
 
-                        if (direction == Direction.Packaging)
-                        {
-                            try
-                            {
-                                // run the 'fake' item through Courier's data resolvers
-                                ResolutionManager.Instance.PackagingItem(fakeItem, propertyItemProvider);
-                            }
-                            catch (Exception ex)
-                            {
-                                CourierLogHelper.Error<NestedContentPropertyDataResolver>(string.Concat("Error packaging data value: ", fakeItem.Name), ex);
-                            }
-                        }
-                        else if (direction == Direction.Extracting)
-                        {
-                            try
-                            {
-                                // run the 'fake' item through Courier's data resolvers
-                                ResolutionManager.Instance.ExtractingItem(fakeItem, propertyItemProvider);
-                            }
-                            catch (Exception ex)
-                            {
-                                CourierLogHelper.Error<NestedContentPropertyDataResolver>(string.Concat("Error extracting data value: ", fakeItem.Name), ex);
-                            }
-                        }
+							if (direction == Direction.Packaging)
+							{
+								try
+								{
+									// run the 'fake' item through Courier's data resolvers
+									ResolutionManager.Instance.PackagingItem(fakeItem, propertyItemProvider);
+								}
+								catch (Exception ex)
+								{
+									CourierLogHelper.Error<NestedContentPropertyDataResolver>(string.Concat("Error packaging data value: ", fakeItem.Name), ex);
+								}
+							}
+							else if (direction == Direction.Extracting)
+							{
+								try
+								{
+									// run the 'fake' item through Courier's data resolvers
+									ResolutionManager.Instance.ExtractingItem(fakeItem, propertyItemProvider);
+								}
+								catch (Exception ex)
+								{
+									CourierLogHelper.Error<NestedContentPropertyDataResolver>(string.Concat("Error extracting data value: ", fakeItem.Name), ex);
+								}
+							}
 
-                        // pass up the dependencies and resources
-                        item.Dependencies.AddRange(fakeItem.Dependencies);
-                        item.Resources.AddRange(fakeItem.Resources);
+							// pass up the dependencies and resources
+							item.Dependencies.AddRange(fakeItem.Dependencies);
+							item.Resources.AddRange(fakeItem.Resources);
 
-                        if (fakeItem.Data != null && fakeItem.Data.Any())
-                        {
-                            var firstDataType = fakeItem.Data.FirstOrDefault();
-                            if (firstDataType != null)
-                            {
-                                // set the resolved property data value
-                                string serializedValue = firstDataType.Value as string ?? JsonConvert.SerializeObject(firstDataType.Value);
+							if (fakeItem.Data != null && fakeItem.Data.Any())
+							{
+								var firstDataType = fakeItem.Data.FirstOrDefault();
+								if (firstDataType != null)
+								{
+									// set the resolved property data value
+									string serializedValue = firstDataType.Value as string ?? JsonConvert.SerializeObject(firstDataType.Value);
 
-                                ncItem[propertyType.Alias] = new JValue(serializedValue);
+									ncItem[propertyType.Alias] = new JValue(serializedValue);
 
-                                // (if packaging) add a dependency for the property's data-type
-                                if (direction == Direction.Packaging)
-                                    item.Dependencies.Add(firstDataType.DataType.ToString(), ItemProviderIds.dataTypeItemProviderGuid);
-                            }
-                        }
-                    }
-                }
-            }
+									// (if packaging) add a dependency for the property's data-type
+									if (direction == Direction.Packaging)
+										item.Dependencies.Add(firstDataType.DataType.ToString(), ItemProviderIds.dataTypeItemProviderGuid);
+								}
+							}
+						}
+					}
+				}
+			}
 
             propertyData.Value = JsonConvert.SerializeObject(ncItems);
         }
